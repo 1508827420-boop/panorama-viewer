@@ -23,19 +23,11 @@ if (!isWebGLAvailable) {
 // ── Renderer ────────────────────────────────────────────────
 let renderer;
 try {
-  renderer = new THREE.WebGLRenderer({ antialias: true, failIfMajorPerformanceCaveat: true });
-  status('WebGL 初始化成功');
-} catch {
-  status('WebGL 性能不足，尝试降级模式...');
-  try {
-    renderer = new THREE.WebGLRenderer({ antialias: false });
-    status('WebGL 降级模式');
-  } catch (e) {
-    status('WebGL 初始化失败: ' + e.message);
-  }
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+} catch (e) {
+  renderer = new THREE.WebGLRenderer({ antialias: false });
 }
-
-if (!renderer) throw new Error('Renderer creation failed');
+status('');
 
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
