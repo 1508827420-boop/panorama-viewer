@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>立方体六面 → 等矩形投影转换器</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #1a1a2e; color: #e0e0e0; font-family: system-ui, sans-serif; min-height: 100vh; padding: 24px; }
+    h2 { font-weight: 500; margin-bottom: 16px; }
+
+    .grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+      max-width: 540px; margin-bottom: 20px;
+    }
+    .drop-zone {
+      aspect-ratio: 1; border: 2px dashed rgba(255,255,255,0.25);
+      border-radius: 10px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 6px;
+      cursor: pointer; transition: 0.2s; position: relative; overflow: hidden;
+      background: rgba(255,255,255,0.04);
+    }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.1); }
+    .drop-zone.loaded { border-color: #4ade80; border-style: solid; }
+    .drop-zone img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.5; }
+    .drop-zone.loaded img { opacity: 1; }
+    .drop-zone .label { font-size: 13px; color: rgba(255,255,255,0.5); z-index: 1; }
+    .drop-zone.loaded .label { display: none; }
+    .drop-zone .face-name { font-weight: 600; font-size: 18px; color: rgba(255,255,255,0.7); z-index: 1; }
+    .drop-zone.loaded .face-name { color: #4ade80; text-shadow: 0 0 8px rgba(0,0,0,0.8); }
+
+    .controls { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+    button {
+      padding: 10px 24px; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px;
+      background: rgba(255,255,255,0.1); color: #fff; font-size: 14px;
+      cursor: pointer; transition: 0.2s;
+    }
+    button:hover { background: rgba(255,255,255,0.2); }
+    button.primary { background: #4ade80; color: #000; border-color: #4ade80; font-weight: 600; }
+    button.primary:hover { background: #6ee7a0; }
+    button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .resolution-label { font-size: 13px; color: rgba(255,255,255,0.5); }
+    .resolution-input {
+      width: 80px; padding: 8px 10px; border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 6px; background: rgba(255,255,255,0.1); color: #fff;
+      font-size: 14px; text-align: center;
+    }
+
+    #preview-container { margin-top: 20px; max-width: 900px; }
+    #preview-container img { width: 100%; border-radius: 8px; display: none; }
+    #preview-container img.show { display: block; }
+
+    #status { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h2>立方体六面 → 等矩形投影</h2>
+  <p style="color: rgba(255,255,255,0.4); margin-bottom: 20px; font-size: 14px;">
+    拖放图片到对应方向框内（或点击选择），全部加载后点击转换
+  </p>
+
+  <div class="grid">
+    <!-- row 1: empty, up, empty -->
+    <div></div>
+    <div class="drop-zone" data-face="u">
+      <span class="face-name">上 ↑</span>
+      <span class="label">u.jpg</span>
+    </div>
+    <div></div>
+
+    <!-- row 2: left, front, right -->
+    <div class="drop-zone" data-face="l">
+      <span class="face-name">左 ←</span>
+      <span class="label">l.jpg</span>
+    </div>
+    <div class="drop-zone" data-face="f">
+      <span class="face-name">前 ↙</span>
+      <span class="label">f.jpg</span>
+    </div>
+    <div class="drop-zone" data-face="r">
+      <span class="face-name">右 →</span>
+      <span class="label">r.jpg</span>
+    </div>
+
+    <!-- row 3: empty, down, empty -->
+    <div></div>
+    <div class="drop-zone" data-face="d">
+      <span class="face-name">下 ↓</span>
+      <span class="label">d.jpg</span>
+    </div>
+    <div></div>
+
+    <!-- row 4: back -->
+    <div></div>
+    <div class="drop-zone" data-face="b">
+      <span class="face-name">后 ↗</span>
+      <span class="label">b.jpg</span>
+    </div>
+    <div></div>
+  </div>
+
+  <div class="controls">
+    <button id="auto-load-btn" class="primary">自动加载六图文件夹</button>
+    <input type="file" id="auto-input" accept="image/*" multiple hidden />
+    <span class="resolution-label">输出宽度:</span>
+    <input class="resolution-input" id="out-width" type="number" value="4096" min="256" max="8192" step="256" />
+    <span class="resolution-label">px（高度自动 = 宽度/2）</span>
+    <button id="convert-btn" disabled>转换</button>
+    <button id="download-btn" disabled>下载</button>
+  </div>
+
+  <div id="preview-container">
+    <img id="preview-img" alt="Equirectangular preview" />
+  </div>
+  <div id="status"></div>
+
+  <canvas id="out-canvas" style="display:none;"></canvas>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.184.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.184.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module" src="./convert.js"></script>
+</body>
+</html>
