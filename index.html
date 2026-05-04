@@ -99,7 +99,7 @@
   // ── Sphere ──────────────────────────────────────────────
   var sphere = new THREE.Mesh(
     new THREE.SphereGeometry(500, 64, 64),
-    new THREE.MeshBasicMaterial({ side: THREE.BackSide, color: 0x444444 })
+    new THREE.MeshBasicMaterial({ side: THREE.BackSide, color: 0x1a1a2e })
   );
   scene.add(sphere);
 
@@ -191,7 +191,7 @@
       sphere.material.needsUpdate = true;
     }, undefined, function() {
       sphere.material.map = null;
-      sphere.material.color.set(0x444444);
+      sphere.material.color.set(0x1a1a2e);
       sphere.material.needsUpdate = true;
     });
   }
