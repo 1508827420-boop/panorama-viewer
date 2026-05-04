@@ -31,13 +31,12 @@ status('');
 
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.domElement.style.position = 'fixed';
-renderer.domElement.style.top = '0';
-renderer.domElement.style.left = '0';
+renderer.domElement.style.cssText = 'position:fixed;top:0;left:0;z-index:1;';
 document.body.appendChild(renderer.domElement);
 
 // ── Scene & Camera ──────────────────────────────────────────
 const scene = new THREE.Scene();
+renderer.setClearColor(0x330000); // temporary: red tint to confirm renderer works
 const camera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
