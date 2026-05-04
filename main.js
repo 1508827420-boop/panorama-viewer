@@ -36,7 +36,7 @@ document.body.appendChild(renderer.domElement);
 
 // ── Scene & Camera ──────────────────────────────────────────
 const scene = new THREE.Scene();
-renderer.setClearColor(0x330000); // temporary: red tint to confirm renderer works
+renderer.setClearColor(0xff0000); // DEBUG: bright red, remove once working
 const camera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
@@ -49,7 +49,7 @@ camera.position.set(0, 0, 0);
 const sphereGeom = new THREE.SphereGeometry(500, 64, 64);
 const sphereMat = new THREE.MeshBasicMaterial({
   side: THREE.BackSide,
-  color: 0x1a1a2e,
+  color: 0x00ff00, // DEBUG: bright green sphere
 });
 const sphere = new THREE.Mesh(sphereGeom, sphereMat);
 scene.add(sphere);
